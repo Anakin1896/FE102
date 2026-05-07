@@ -3,3 +3,16 @@ bin/
 
 appsettings.Development.json
 appsettings.json
+
+.vs
+
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+
+
