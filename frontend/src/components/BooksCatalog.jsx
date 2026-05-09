@@ -1,11 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, ScanLine, BookOpen, ArrowLeftRight, 
   Users, FileText, ShieldAlert, LogOut, Search, Filter, 
-  Eye, Edit, Trash2, Plus
+  Eye, Edit, Trash2, Plus, Download
 } from 'lucide-react';
 
+const downloadQr = async (bookId, title) => {
+  try {
+    const response = await fetch(`http://localhost:5232/api/Book/${bookId}/qr/download`);
+    if (!response.ok) throw new Error('Download failed');
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9]/gi, '_')}_QR.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    alert('Failed to download QR code.');
+  }
+};
+
 const BooksCatalog = ({ books = [], onAddBook }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredBooks = books.filter((book) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      book.title?.toLowerCase().includes(q) ||
+      book.author?.toLowerCase().includes(q) ||
+      book.isbn?.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="flex h-screen bg-[#1a202c] text-white font-sans overflow-hidden">
       
@@ -93,6 +120,8 @@ const BooksCatalog = ({ books = [], onAddBook }) => {
             <input 
               type="text" 
               placeholder="Search by title, author, or ISBN..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#1e2532] border border-gray-700/50 rounded-full py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#00a3ff] transition-all"
             />
           </div>
@@ -104,24 +133,35 @@ const BooksCatalog = ({ books = [], onAddBook }) => {
 
         {/* Books Grid area */}
         <div className="flex-1 overflow-y-auto px-8 py-4">
-          {books.length === 0 ? (
+          {filteredBooks.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-700/50 rounded-2xl bg-[#1e2532]/30 p-8">
               <BookOpen className="w-16 h-16 text-gray-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-300 mb-2">No books in catalog</h3>
-              <p className="text-gray-500 text-center max-w-md mb-6">
-                Your library database is currently empty. Click the button below or in the top right to register your first book.
-              </p>
-              <button 
-                onClick={onAddBook}
-                className="flex items-center gap-2 bg-[#1e2532] border border-gray-700 hover:border-gray-500 text-white px-6 py-3 rounded-full font-semibold transition-colors"
-              >
-                <Plus className="w-5 h-5" /> Add First Book
-              </button>
+              {searchQuery ? (
+                <>
+                  <h3 className="text-xl font-bold text-gray-300 mb-2">No results found</h3>
+                  <p className="text-gray-500 text-center max-w-md">
+                    No books match &ldquo;{searchQuery}&rdquo;. Try a different title, author, or ISBN.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl font-bold text-gray-300 mb-2">No books in catalog</h3>
+                  <p className="text-gray-500 text-center max-w-md mb-6">
+                    Your library database is currently empty. Click the button below or in the top right to register your first book.
+                  </p>
+                  <button 
+                    onClick={onAddBook}
+                    className="flex items-center gap-2 bg-[#1e2532] border border-gray-700 hover:border-gray-500 text-white px-6 py-3 rounded-full font-semibold transition-colors"
+                  >
+                    <Plus className="w-5 h-5" /> Add First Book
+                  </button>
+                </>
+              )}
             </div>
           ) : (
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {books.map((book) => (
+              {filteredBooks.map((book) => (
                 <div key={book.id} className="bg-[#2d3748] rounded-2xl p-6 border border-gray-700/50 hover:border-gray-600 transition-colors flex flex-col">
                   <div className="flex justify-between items-start mb-4">
                     <span className="text-xs text-gray-500 font-medium">{book.id}</span>
@@ -141,6 +181,12 @@ const BooksCatalog = ({ books = [], onAddBook }) => {
                         alt={`QR code for ${book.title}`}
                         className="w-24 h-24 rounded-lg"
                       />
+                      <button
+                        onClick={() => downloadQr(book.id, book.title)}
+                        className="mt-2 flex items-center gap-1 text-[10px] text-[#00a3ff] hover:text-blue-300 transition-colors font-semibold"
+                      >
+                        <Download className="w-3 h-3" /> Download QR
+                      </button>
                     </div>
                   )}
 

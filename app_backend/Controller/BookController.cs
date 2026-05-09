@@ -29,6 +29,24 @@ namespace app_backend.Controller
             return Ok(book);
         }
 
+        [HttpGet("{id:guid}/qr/download")]
+        public async Task<IActionResult> DownloadQr(Guid id, CancellationToken cancellationToken)
+        {
+            var book = await context.Books.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
+            if (book is null || string.IsNullOrEmpty(book.QrPath))
+                return NotFound();
+
+            var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var filePath = Path.Combine(webRootPath, book.QrPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath, cancellationToken);
+            var fileName = $"{book.Title.Replace(" ", "_")}_QR.png";
+            return File(fileBytes, "image/png", fileName);
+        }
+
         [HttpPost]
         public async Task<ActionResult<Book>> CreateBook([FromBody] Book book, CancellationToken cancellationToken)
         {
@@ -36,6 +54,24 @@ namespace app_backend.Controller
             {
                 return ValidationProblem(ModelState);
             }
+
+            var normalizedIsbn = book.Isbn.Trim();
+            var normalizedTitle = book.Title.Trim();
+            var normalizedAuthor = book.Author.Trim();
+
+            var duplicateExists = await context.Books.AnyAsync(
+                b => b.Isbn == normalizedIsbn || (b.Title == normalizedTitle && b.Author == normalizedAuthor),
+                cancellationToken);
+
+            if (duplicateExists)
+            {
+                return Conflict(new { message = "A similar book already exists." });
+            }
+
+            book.Isbn = normalizedIsbn;
+            book.Title = normalizedTitle;
+            book.Author = normalizedAuthor;
+            book.Category = book.Category.Trim();
 
             if (book.Id == Guid.Empty)
             {
