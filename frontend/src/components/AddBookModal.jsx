@@ -180,6 +180,20 @@ const AddBookModal = ({ onClose, onBookAdded }) => {
                 <select name="category" value={form.category} onChange={handleChange} className="w-full bg-[#1a202c] border border-gray-700 rounded-xl p-3 focus:ring-2 focus:ring-lib-blue outline-none transition-all text-white">
                   <option>Computer Science</option>
                   <option>Software Engineering</option>
+                  <option>Mathematics</option>
+                  <option>Physics</option>
+                  <option>Chemistry</option>
+                  <option>Biology</option>
+                  <option>Engineering</option>
+                  <option>Business & Economics</option>
+                  <option>Psychology</option>
+                  <option>History</option>
+                  <option>Literature</option>
+                  <option>Philosophy</option>
+                  <option>Art & Design</option>
+                  <option>Medicine & Health</option>
+                  <option>Law</option>
+                  <option>Other</option>
                 </select>
               </div>
             </div>
