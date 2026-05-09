@@ -21,16 +21,27 @@ const downloadQr = async (bookId, title) => {
   }
 };
 
+const ALL_CATEGORIES = [
+  'Computer Science', 'Software Engineering', 'Mathematics', 'Physics',
+  'Chemistry', 'Biology', 'Engineering', 'Business & Economics',
+  'Psychology', 'History', 'Literature', 'Philosophy',
+  'Art & Design', 'Medicine & Health', 'Law',
+];
+
 const BooksCatalog = ({ books = [], onAddBook }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const categories = ['All', ...ALL_CATEGORIES];
 
   const filteredBooks = books.filter((book) => {
     const q = searchQuery.toLowerCase();
-    return (
+    const matchesSearch =
       book.title?.toLowerCase().includes(q) ||
       book.author?.toLowerCase().includes(q) ||
-      book.isbn?.toLowerCase().includes(q)
-    );
+      book.isbn?.toLowerCase().includes(q);
+    const matchesCategory = selectedCategory === 'All' || book.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
 
   return (
@@ -125,10 +136,19 @@ const BooksCatalog = ({ books = [], onAddBook }) => {
               className="w-full bg-[#1e2532] border border-gray-700/50 rounded-full py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#00a3ff] transition-all"
             />
           </div>
-          <button className="flex items-center gap-2 bg-[#1e2532] border border-gray-700/50 rounded-full px-6 py-3 text-sm font-medium hover:bg-gray-800 transition-colors">
-            <Filter className="w-4 h-4 text-gray-400" />
-            All
-          </button>
+          <div className="relative flex items-center">
+            <Filter className="w-4 h-4 text-gray-400 absolute left-4 pointer-events-none" />
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="bg-[#1e2532] border border-gray-700/50 rounded-full py-3 pl-10 pr-8 text-sm font-medium text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00a3ff] transition-all appearance-none cursor-pointer"
+              style={{ width: `calc(${selectedCategory.length}ch + 5rem)` }}
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Books Grid area */}
@@ -136,11 +156,15 @@ const BooksCatalog = ({ books = [], onAddBook }) => {
           {filteredBooks.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-700/50 rounded-2xl bg-[#1e2532]/30 p-8">
               <BookOpen className="w-16 h-16 text-gray-600 mb-4" />
-              {searchQuery ? (
+              {searchQuery || selectedCategory !== 'All' ? (
                 <>
                   <h3 className="text-xl font-bold text-gray-300 mb-2">No results found</h3>
                   <p className="text-gray-500 text-center max-w-md">
-                    No books match &ldquo;{searchQuery}&rdquo;. Try a different title, author, or ISBN.
+                    {searchQuery && selectedCategory !== 'All'
+                      ? `No books match "${searchQuery}" in the "${selectedCategory}" category.`
+                      : searchQuery
+                      ? `No books match "${searchQuery}". Try a different title, author, or ISBN.`
+                      : `No books found in the "${selectedCategory}" category.`}
                   </p>
                 </>
               ) : (
