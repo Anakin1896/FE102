@@ -15,6 +15,25 @@ const AddBookModal = ({ onClose, onBookAdded }) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // Parse structured QR content: "BookId:...;ISBN:...;Title:...;Author:...;Category:..."
+  const parseQrContent = (text) => {
+    if (!text.includes(';') || !text.includes(':')) return null;
+    const parts = {};
+    text.split(';').forEach((segment) => {
+      const idx = segment.indexOf(':');
+      if (idx === -1) return;
+      parts[segment.substring(0, idx).trim()] = segment.substring(idx + 1).trim();
+    });
+    if (!parts.ISBN) return null;
+    return {
+      isbn: parts.ISBN || '',
+      title: parts.Title || '',
+      author: parts.Author || '',
+      quantity: parts.Quantity || '',
+      category: parts.Category || 'Computer Science',
+    };
+  };
+
   const stopScanner = async () => {
     if (scannerRef.current) {
       try {
@@ -45,9 +64,15 @@ const AddBookModal = ({ onClose, onBookAdded }) => {
         scannerRef.current = html5QrCode;
         await html5QrCode.start(
           { facingMode: 'environment' },
-          { fps: 15, qrbox: { width: 300, height: 120 } },
+          { fps: 15, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
-            setForm((prev) => ({ ...prev, isbn: decodedText }));
+            const parsed = parseQrContent(decodedText);
+            if (parsed) {
+              setForm(parsed);
+            } else {
+              // Plain barcode — just populate ISBN
+              setForm((prev) => ({ ...prev, isbn: decodedText }));
+            }
             stopScanner();
             setMethod('manual');
           },

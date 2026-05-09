@@ -131,7 +131,18 @@ const BooksCatalog = ({ books = [], onAddBook }) => {
                   </div>
                   
                   <h3 className="font-bold text-lg leading-tight mb-1">{book.title}</h3>
-                  <p className="text-sm text-gray-400 mb-6">{book.author}</p>
+                  <p className="text-sm text-gray-400 mb-4">{book.author}</p>
+
+                  {book.qrPath && (
+                    <div className="flex flex-col items-center mb-4 bg-[#1a202c] p-3 rounded-xl">
+                      <p className="text-[10px] text-gray-500 uppercase font-semibold mb-2">QR Code</p>
+                      <img
+                        src={`http://localhost:5232${book.qrPath}`}
+                        alt={`QR code for ${book.title}`}
+                        className="w-24 h-24 rounded-lg"
+                      />
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4 mb-6 bg-[#1a202c] p-4 rounded-xl">
                     <div>

@@ -1,5 +1,6 @@
 ﻿using app_backend.Data;
 using app_backend.Models;
+using app_backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +8,7 @@ namespace app_backend.Controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class BookController(AppDbContext context) : ControllerBase
+    public class BookController(AppDbContext context, IQrCodeService qrCodeService) : ControllerBase
     {
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Book>>> GetBooks()
@@ -29,7 +30,7 @@ namespace app_backend.Controller
         }
 
         [HttpPost]
-        public async Task<ActionResult<Book>> CreateBook([FromBody] Book book)
+        public async Task<ActionResult<Book>> CreateBook([FromBody] Book book, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
@@ -41,8 +42,11 @@ namespace app_backend.Controller
                 book.Id = Guid.NewGuid();
             }
 
-            await context.Books.AddAsync(book);
-            await context.SaveChangesAsync();
+            var qrContent = $"BookId:{book.Id};ISBN:{book.Isbn};Title:{book.Title};Author:{book.Author};Quantity:{book.Quantity};Category:{book.Category}";
+            book.QrPath = await qrCodeService.GenerateBookQrAsync(book.Id, qrContent, cancellationToken);
+
+            await context.Books.AddAsync(book, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
 
             return CreatedAtAction(nameof(GetBook), new { id = book.Id }, book);
         }

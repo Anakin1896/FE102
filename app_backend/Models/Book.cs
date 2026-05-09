@@ -24,4 +24,7 @@ public class Book
     [Required]
     [StringLength(100)]
     public string Category { get; set; } = string.Empty;
+
+    [StringLength(260)]
+    public string QrPath { get; set; } = string.Empty;
 }
